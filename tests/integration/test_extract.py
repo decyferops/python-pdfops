@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 import pdf_ops.extract
-from tests.conftest import RunApp, _build_raw_pdf
+from tests.helpers import RunApp, build_raw_pdf
 
 pytestmark = pytest.mark.integration
 
@@ -344,7 +344,7 @@ class TestRawNameTreeShapes:
         # entries that do carry data.
         carrier = tmp_path / "bare-ref.pdf"
         carrier.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles "
                     b"<< /Names [ (external.txt) 4 0 R (real.txt) 5 0 R ] >> >> >>",
@@ -367,7 +367,7 @@ class TestRawNameTreeShapes:
         # /EF may carry the stream under /UF (unicode name) with no /F.
         carrier = tmp_path / "uf-only.pdf"
         carrier.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles "
                     b"<< /Names [ (u.txt) 4 0 R ] >> >> >>",
@@ -407,7 +407,7 @@ class TestRawNameTreeShapes:
         # never escape as exit 1 - the only class a workflow engine retries.
         carrier = tmp_path / "malformed.pdf"
         carrier.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 4 0 R >> >>",
                     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
@@ -425,7 +425,7 @@ class TestRawNameTreeShapes:
     ) -> None:
         carrier = tmp_path / "bad-ef.pdf"
         carrier.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles "
                     b"<< /Names [ (bad.txt) 4 0 R (good.txt) 5 0 R ] >> >> >>",
@@ -450,7 +450,7 @@ class TestRawNameTreeShapes:
         # key gets the deterministic fallback name; the payload survives.
         carrier = tmp_path / "int-key.pdf"
         carrier.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles "
                     b"<< /Names [ 999999999 4 0 R ] >> >> >>",
@@ -473,7 +473,7 @@ class TestRawNameTreeShapes:
         # must terminate instead of hanging the container.
         carrier = tmp_path / "cyclic.pdf"
         carrier.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 4 0 R >> >>",
                     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",

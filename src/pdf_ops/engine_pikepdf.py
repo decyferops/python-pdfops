@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import re
 import warnings
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, cast
 
@@ -90,12 +91,8 @@ class PikepdfEngine:
                 # supplied string matched.
                 password_type = "owner" if pdf.owner_password_matched else "user"
 
-        try:
+        with _translating(path):
             pages = len(pdf.pages)
-        except pikepdf.PdfError as err:
-            raise _translated_data_error(path, err) from err
-        except _STRUCTURE_FAILURES as err:
-            raise _corrupt(path, err) from err
 
         return OpenedInput(
             path=path,
@@ -119,12 +116,8 @@ class PikepdfEngine:
         with pikepdf.Pdf.new() as merged:
             for opened in inputs:
                 source = cast(pikepdf.Pdf, opened.handle)
-                try:
+                with _translating(opened.path):
                     merged.pages.extend(source.pages)
-                except pikepdf.PdfError as err:
-                    raise _translated_data_error(opened.path, err) from err
-                except _STRUCTURE_FAILURES as err:
-                    raise _corrupt(opened.path, err) from err
 
             encryption = None
             if output_password is not None:
@@ -160,16 +153,12 @@ class PikepdfEngine:
 
     def list_attachments(self, opened: OpenedInput) -> list[Attachment]:
         pdf = cast(pikepdf.Pdf, opened.handle)
-        try:
+        with _translating(opened.path):
             entries = _embedded_file_entries(pdf)
-        except pikepdf.PdfError as err:
-            raise _translated_data_error(opened.path, err) from err
-        except _STRUCTURE_FAILURES as err:
-            raise _corrupt(opened.path, err) from err
 
         attachments: list[Attachment] = []
         for raw_name, spec in entries:
-            try:
+            with _translating(opened.path):
                 embedded: Any = spec.get("/EF") if isinstance(spec, pikepdf.Dictionary) else None
                 if embedded is None or not isinstance(embedded, pikepdf.Dictionary):
                     # A bare file reference (no embedded stream) or a
@@ -181,10 +170,6 @@ class PikepdfEngine:
                 if stream is None:
                     continue
                 data = bytes(stream.read_bytes())
-            except pikepdf.PdfError as err:
-                raise _translated_data_error(opened.path, err) from err
-            except _STRUCTURE_FAILURES as err:
-                raise _corrupt(opened.path, err) from err
             # A name-tree key must be a PDF string; qpdf hands anything else
             # over as a native Python value (an integer key would make a
             # bytes()/str() conversion attacker-sized). A non-string key gets
@@ -334,6 +319,22 @@ def _mentions_encryption(path: Path) -> bool:
             return b"/Encrypt" in handle.read()
     except OSError:
         return False
+
+
+@contextmanager
+def _translating(path: Path) -> Generator[None]:
+    """Translate pikepdf's failure modes while walking ``path``'s structure.
+
+    Wraps ONLY walks over document structure (see ``_STRUCTURE_FAILURES``):
+    a builtin exception inside means a file shape the engine cannot process,
+    never a bug in our code. The open and save paths keep their finer handling.
+    """
+    try:
+        yield
+    except pikepdf.PdfError as err:
+        raise _translated_data_error(path, err) from err
+    except _STRUCTURE_FAILURES as err:
+        raise _corrupt(path, err) from err
 
 
 def _translated_data_error(path: Path, err: Exception) -> InvalidPdfError:

@@ -16,10 +16,9 @@ import pytest
 from pypdf import PdfWriter
 
 from pdf_ops.main import run
+from tests.helpers import RunApp, build_raw_pdf
 
 TERMINAL_EVENTS = {"operation_complete", "operation_failed"}
-
-RunApp = Callable[[dict[str, str]], tuple[int, list[dict[str, Any]]]]
 
 
 @pytest.fixture
@@ -115,27 +114,6 @@ def make_damaged_pdf(make_pdf: Callable[..., Path], tmp_path: Path) -> Callable[
     return _make
 
 
-def _build_raw_pdf(objects: list[str | bytes]) -> bytes:
-    """Minimal hand-assembled PDF with a correct xref - for structural cases
-    the writer API refuses to produce (dangling references, missing /Pages,
-    raw name-tree bytes)."""
-    out = bytearray(b"%PDF-1.4\n")
-    offsets: list[int] = []
-    for number, body in enumerate(objects, start=1):
-        offsets.append(len(out))
-        body_bytes = body if isinstance(body, bytes) else body.encode()
-        out += f"{number} 0 obj\n".encode() + body_bytes + b"\nendobj\n"
-    xref_pos = len(out)
-    out += f"xref\n0 {len(objects) + 1}\n".encode()
-    out += b"0000000000 65535 f \n"
-    for offset in offsets:
-        out += f"{offset:010d} 00000 n \n".encode()
-    out += (
-        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF\n"
-    ).encode()
-    return bytes(out)
-
-
 @pytest.fixture
 def make_encrypted_pdf(tmp_path: Path) -> Callable[..., Path]:
     """An encrypted one-page PDF.
@@ -175,7 +153,7 @@ def make_dangling_ref_pdf(tmp_path: Path) -> Callable[..., Path]:
     def _make(name: str = "dangling.pdf") -> Path:
         path = tmp_path / name
         path.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     "<< /Type /Catalog /Pages 2 0 R >>",
                     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
@@ -195,7 +173,7 @@ def make_pathological_pdf(tmp_path: Path) -> Callable[..., Path]:
 
     def _make(name: str = "pathological.pdf") -> Path:
         path = tmp_path / name
-        path.write_bytes(_build_raw_pdf(["<< /Type /Catalog >>"]))
+        path.write_bytes(build_raw_pdf(["<< /Type /Catalog >>"]))
         return path
 
     return _make
@@ -240,7 +218,7 @@ def make_raw_attachment_pdf(tmp_path: Path) -> Callable[..., Path]:
         filter_part = (b" /Filter " + filter_entry) if filter_entry else b""
         path = tmp_path / name
         path.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     b"<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles "
                     b"<< /Names [ " + name_literal + b" 4 0 R ] >> >> >>",

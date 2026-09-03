@@ -15,7 +15,7 @@ from pypdf import PdfReader
 
 import pdf_ops.merge
 from pdf_ops.errors import ErrorCode, InvalidPdfError
-from tests.conftest import RunApp
+from tests.helpers import RunApp
 from tests.integration.test_extract import extract_env
 from tests.integration.test_merge import FakeEngine, merge_env
 

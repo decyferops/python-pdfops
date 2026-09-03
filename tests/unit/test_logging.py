@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 
 import pytest
 
@@ -13,25 +14,9 @@ from pdf_ops.logging_setup import (
     emit_terminal,
     setup_logging,
 )
+from tests.helpers import make_record
 
 pytestmark = pytest.mark.unit
-
-
-def make_record(
-    msg: str = "some_event", extra: dict[str, object] | None = None
-) -> logging.LogRecord:
-    record = logging.LogRecord(
-        name="pdf_ops",
-        level=logging.INFO,
-        pathname=__file__,
-        lineno=1,
-        msg=msg,
-        args=None,
-        exc_info=None,
-    )
-    for key, value in (extra or {}).items():
-        setattr(record, key, value)
-    return record
 
 
 class TestJsonFormatter:
@@ -43,7 +28,7 @@ class TestJsonFormatter:
         assert payload["ts"].endswith("+00:00")
 
     def test_extra_fields_are_merged_into_payload(self) -> None:
-        record = make_record(extra={"operation": "merge", "exit_code": 2, "context": {"a": 1}})
+        record = make_record(operation="merge", exit_code=2, context={"a": 1})
         payload = json.loads(JsonFormatter().format(record))
         assert payload["operation"] == "merge"
         assert payload["exit_code"] == 2
@@ -53,14 +38,13 @@ class TestJsonFormatter:
         try:
             raise ValueError("boom")
         except ValueError:
-            record = make_record()
-            record.exc_info = __import__("sys").exc_info()
+            record = make_record(exc_info=sys.exc_info())
         payload = json.loads(JsonFormatter().format(record))
         assert payload["exc_type"] == "ValueError"
         assert "boom" in payload["traceback"]
 
     def test_unserializable_values_fall_back_to_str(self) -> None:
-        record = make_record(extra={"path": object()})
+        record = make_record(path=object())
         payload = json.loads(JsonFormatter().format(record))
         assert isinstance(payload["path"], str)
 
@@ -126,15 +110,7 @@ class TestEmitTerminal:
 
 class TestThirdPartyEventFilter:
     def pypdf_record(self, message: str) -> logging.LogRecord:
-        return logging.LogRecord(
-            name="pypdf",
-            level=logging.WARNING,
-            pathname=__file__,
-            lineno=1,
-            msg=message,
-            args=None,
-            exc_info=None,
-        )
+        return make_record(message, name="pypdf", level=logging.WARNING)
 
     def test_saslprep_codepoints_are_masked(self) -> None:
         # pypdf's SASLprep warning names the exact codepoint of a password

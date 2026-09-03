@@ -13,7 +13,7 @@ from pypdf import PdfReader
 import pdf_ops.merge
 from pdf_ops.engine import OpenedInput
 from pdf_ops.errors import ErrorCode, InvalidPdfError
-from tests.conftest import RunApp, _build_raw_pdf
+from tests.helpers import RunApp, build_raw_pdf
 
 pytestmark = pytest.mark.integration
 
@@ -271,7 +271,7 @@ class TestPathologicalInputs:
         # must still surface as an event, not be silently absorbed.
         source = tmp_path / "late.pdf"
         source.write_bytes(
-            _build_raw_pdf(
+            build_raw_pdf(
                 [
                     "<< /Type /Catalog /Pages 2 0 R >>",
                     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",

@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 
 import pdf_ops.main
-from tests.conftest import RunApp
+from tests.helpers import RunApp
 
 pytestmark = pytest.mark.integration
 

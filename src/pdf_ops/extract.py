@@ -32,16 +32,7 @@ def run_extract(config: ExtractConfig, secrets: Secrets, logger: logging.Logger)
 
     engine = get_engine()
     opened = engine.open_input(config.input, secrets.password)
-    logger.info(
-        "input_opened",
-        extra={
-            "input": str(config.input),
-            "pages": opened.pages,
-            "encrypted": opened.encrypted,
-            "algorithm": opened.algorithm,
-            "password_type": opened.password_type,
-        },
-    )
+    logger.info("input_opened", extra=opened.event_fields())
     for message in opened.warnings:
         logger.warning("pdf_library_message", extra={"detail": message, "source": "qpdf"})
     if secrets.password is not None and not opened.encrypted:

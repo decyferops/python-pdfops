@@ -39,16 +39,7 @@ def run_merge(
     for path in config.inputs:
         one = engine.open_input(path, secrets.password)
         opened.append(one)
-        logger.info(
-            "input_opened",
-            extra={
-                "input": str(path),
-                "pages": one.pages,
-                "encrypted": one.encrypted,
-                "algorithm": one.algorithm,
-                "password_type": one.password_type,
-            },
-        )
+        logger.info("input_opened", extra=one.event_fields())
         for message in one.warnings:
             logger.warning("pdf_library_message", extra={"detail": message, "source": "qpdf"})
 

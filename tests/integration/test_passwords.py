@@ -18,7 +18,7 @@ import pdf_ops.merge
 from pdf_ops.engine import OpenedInput
 from pdf_ops.main import run
 from pdf_ops.secrets import Secret
-from tests.conftest import RunApp, _build_raw_pdf
+from tests.helpers import RunApp, build_raw_pdf
 from tests.integration.test_extract import extract_env
 from tests.integration.test_merge import merge_env
 
@@ -124,7 +124,7 @@ class TestMergePasswords:
         # classification must stay in the password class - never corrupt, and
         # never a retryable internal error.
         locked = tmp_path / "cert.pdf"
-        raw = _build_raw_pdf(
+        raw = build_raw_pdf(
             [
                 "<< /Type /Catalog /Pages 2 0 R >>",
                 "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",

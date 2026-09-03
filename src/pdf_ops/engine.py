@@ -15,7 +15,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 from pdf_ops.secrets import Secret
 
@@ -46,6 +46,16 @@ class OpenedInput:
     # ("repairing", xref rebuilt, ...). The operation layer surfaces them as
     # events; anything unrecoverable raises instead.
     warnings: tuple[str, ...] = ()
+
+    def event_fields(self) -> dict[str, Any]:
+        """The ``input_opened`` payload - one schema for every operation."""
+        return {
+            "input": str(self.path),
+            "pages": self.pages,
+            "encrypted": self.encrypted,
+            "algorithm": self.algorithm,
+            "password_type": self.password_type,
+        }
 
 
 @dataclass(frozen=True, slots=True)
