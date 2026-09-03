@@ -8,10 +8,12 @@ operation per container run - **merge** multiple PDFs into one, or **extract** t
 attachments embedded in a PDF - configured entirely through environment variables.
 
 The design - architecture, library tradeoffs, security posture, limitations - is
-summarized in [`docs/DESIGN.md`](docs/DESIGN.md); the working notes behind it are
-[`docs/DESIGN_NOTES.md`](docs/DESIGN_NOTES.md), and individual choices, with their
-alternatives and status, live in the decision register at
-[`docs/DECISIONS.md`](docs/DECISIONS.md).
+summarized in [`docs/DESIGN.md`](docs/DESIGN.md) and drawn, view by view, in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); the runtime behavior contract - mounts,
+passwords, output policy, log events, error codes - is [`docs/OPERATIONS.md`](docs/OPERATIONS.md);
+the working notes behind the design are [`docs/DESIGN_NOTES.md`](docs/DESIGN_NOTES.md),
+and individual choices, with their alternatives and status, live in the decision
+register at [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ## Quick start
 
@@ -86,10 +88,10 @@ from `PDFOPS_*` variables, and the mounted volumes provide inputs and receive ou
 | `PDFOPS_FAIL_ON_NO_ATTACHMENTS` | extract | no | `true`, `false` (case-insensitive) - fail (exit 3) when the PDF has no attachments | `false` |
 | `PDFOPS_PASSWORD_FILE` | both | no | path to a mounted secret file holding the password (preferred channel; one trailing newline stripped) | - |
 | `PDFOPS_PASSWORD` | both | no | the password itself - discouraged: env values leak via `kubectl describe`, `/proc/<pid>/environ`, crash tooling | - |
-| `PDFOPS_OUTPUT_ENCRYPTION` | merge | no | `never`, `inherit`, `always` (case-insensitive) - see below | `never` |
+| `PDFOPS_OUTPUT_ENCRYPTION` | merge | no | `never`, `inherit`, `always` (case-insensitive) - see [Output encryption](docs/OPERATIONS.md#output-encryption) | `never` |
 | `PDFOPS_OUTPUT_PASSWORD_FILE` | merge | no | secret file holding the password for the merged output | - |
 | `PDFOPS_OUTPUT_PASSWORD` | merge | no | output password as a direct value (same caveats as `PDFOPS_PASSWORD`) | - |
-| `PDFOPS_ON_EXISTS` | both | no | `fail`, `overwrite`, `skip` (case-insensitive) - see Retries | `fail` |
+| `PDFOPS_ON_EXISTS` | both | no | `fail`, `overwrite`, `skip` (case-insensitive) - see [Existing outputs](docs/OPERATIONS.md#atomic-writes-and-existing-outputs) | `fail` |
 | `PDFOPS_LOG_LEVEL` | - | no | `debug`, `info`, `warning`, `error` (case-insensitive) | `info` |
 
 Strictness rules, all exit 2: any other `PDFOPS_*` variable is rejected as a probable
@@ -125,8 +127,8 @@ per exit code in [`docs/OPERATIONS.md`](docs/OPERATIONS.md#error-codes).
 ## Logging
 
 Output is JSON lines on stdout - one event per line, stderr stays empty. Lifecycle
-events narrate progress and respect `PDFOPS_LOG_LEVEL`; passwords are echoed as
-presence only (`unset` / `set(env)` / `set(file)`), never as values. Every run ends
+events narrate progress and respect `PDFOPS_LOG_LEVEL`; the `config_loaded` event
+echoes passwords as presence only (`unset` / `set(env)` / `set(file)`), never as values. Every run ends
 with exactly one terminal event - `operation_complete` or `operation_failed` (with a
 machine-readable `error_code`) - which no log level suppresses, so a workflow engine
 can always branch on the last line:

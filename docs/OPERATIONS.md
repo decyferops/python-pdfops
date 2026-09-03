@@ -27,16 +27,18 @@ output policies, and what the log stream carries. The short reference tables
   the spec-standard empty-password try, exactly like every PDF viewer. Wrong
   password -> exit 5 naming the failing input.
 - The password itself never appears in any output: the in-process `Secret` wrapper
-  renders as `***`, the logging layer scrubs registered secret values from every
-  event including tracebacks, and the process scrubs `PDFOPS_PASSWORD` from its own
-  environment on startup.
+  renders as `***`, the logging layer scrubs registered secret values (four
+  characters or longer; a shorter one draws a `redaction_degraded` warning) from the
+  free-text fields of every event including tracebacks, and the process scrubs
+  `PDFOPS_PASSWORD` and `PDFOPS_OUTPUT_PASSWORD` from its own environment on startup.
 - Each `input_opened` event reports the encryption algorithm (read from the PDF's
   plaintext `/Encrypt` dictionary) and how the file opened (`user`/`owner`/`empty`).
 - A permissions-locked input among user-locked ones never fails just because a
   password was supplied: the empty try still applies per input (the exact call
   sequence is drawn in [`diagrams/index.html#passwords`](diagrams/index.html#passwords)).
 - Passwords containing control characters are rejected (exit 2) as encoding
-  accidents.
+  accidents, at the moment the password is resolved - a merge that short-circuits
+  on `skip` never reads it.
 - Note the env channel's inherent limit: the initial environment block stays visible
   to `docker inspect` and `/proc/<pid>/environ` - the file channel is the one that
   keeps the value out of the process's environment entirely.
@@ -50,7 +52,11 @@ this step; `always` encrypts unconditionally. The output password comes from
 `PDFOPS_OUTPUT_PASSWORD_FILE`/`PDFOPS_OUTPUT_PASSWORD`, falling back to the
 *explicitly supplied* input password (never the empty auto-try). Output encryption is
 always AES-256, whatever the inputs used. Supplying an output password while the mode
-is `never` is a hard configuration error.
+is `never` is a hard configuration error. With no password available anywhere
+(`always` at config parse, or `inherit` when the only encrypted inputs opened via the
+empty try) the run fails with `MISSING_OUTPUT_PASSWORD`, exit 2, before anything is
+written. `security_downgrade` is a warning-level event, so `PDFOPS_LOG_LEVEL=error`
+hides it; the terminal event's `output_encrypted: false` is the level-proof signal.
 
 ## Atomic writes and existing outputs
 
@@ -67,9 +73,11 @@ is `never` is a hard configuration error.
   are written (`attachments_skipped` reports the rest), so a crashed run's partial
   set gets finished by the retry - sound because every file this tool writes is
   atomic and therefore whole. Both `skip` modes trust that an existing file is a
-  completed prior output.
+  completed prior output. A directory at the output path, or at any extraction
+  target name, is refused under every policy (`OUTPUT_IS_DIRECTORY`, exit 6).
 - Temp debris from a crashed prior run (`.name.*.tmp` matching this run's own
-  targets) is removed at startup with a `stale_temp_removed` event. The whole
+  targets) is removed before the first write, with a `stale_temp_removed` event; a
+  run refused or failed before that point leaves it for the next attempt. The whole
   run/retry state machine is drawn in
   [`diagrams/index.html#lifecycle`](diagrams/index.html#lifecycle). One writer per
   output path at a time is assumed - which a workflow engine guarantees per step.
@@ -81,8 +89,11 @@ is `never` is a hard configuration error.
 - **Attachment names are treated as untrusted input**: extraction reduces every name
   to a sanitized basename (path separators, traversal segments, and control
   characters removed; deterministic `attachment_<n>` fallback), so a hostile PDF can
-  never write outside `PDFOPS_OUTPUT_DIR`. Duplicate names get deterministic
-  `-1`/`-2` suffixes; the original name is logged whenever sanitization changed it.
+  never write outside `PDFOPS_OUTPUT_DIR`. Names longer than 200 bytes are
+  truncated. Duplicate names get deterministic `-1`/`-2` suffixes, with collisions
+  detected case-insensitively (the volume may be), so `Report.txt` and `report.txt`
+  become `Report.txt` and `report-1.txt` on every filesystem; the original name is
+  logged whenever sanitization changed it.
 - The path every untrusted name travels is drawn in
   [`diagrams/index.html#extract`](diagrams/index.html#extract).
 - Extraction order is the PDF's name-tree order - deterministic across runs. Each
@@ -91,7 +102,7 @@ is `never` is a hard configuration error.
   (exit 6) - see `PDFOPS_ON_EXISTS` above for the retry-friendly modes. A directory
   at an output path is refused under every policy (`OUTPUT_IS_DIRECTORY`). A PDF
   with zero attachments is a success with `attachments_extracted=0` unless
-  `PDFOPS_FAIL_ON_NO_ATTACHMENTS` is set.
+  `PDFOPS_FAIL_ON_NO_ATTACHMENTS=true` (exit 3, `NO_ATTACHMENTS`).
 
 ## Resource sizing
 
@@ -118,18 +129,29 @@ the workflow engine reports the kill itself.
 
 ## Log events
 
-One JSON object per line on stdout; stderr stays empty. Lifecycle events narrate
-progress at their log levels (`config_loaded`, `input_opened`, `merge_written`,
-`attachment_extracted`, `stale_temp_removed`, `pdf_library_message` for damage the
-PDF engine repaired, `security_downgrade`, `password_unused`, ...). The terminal
-event is never suppressed by `PDFOPS_LOG_LEVEL`:
+One JSON object per line on stdout; stderr stays empty. Every event carries `ts`,
+`level` and `event`; the other fields depend on the event. Lifecycle events respect
+`PDFOPS_LOG_LEVEL`; the two terminal events never do. This is the complete
+vocabulary: a test checks it against every event the code emits.
 
-- `operation_complete` - merge: `pages`, `bytes_written`, `output_path`,
-  `output_encrypted`; extract: `attachments_extracted`, `bytes_written`, plus
-  `attachments_skipped` under `skip`. Always: `exit_code`, `duration_s`.
-- `operation_failed` - `error_code` (machine-readable, finer-grained than the exit
-  code), `error_message`, `exit_code`, `context` (e.g. the failing input), and a
-  `traceback` for unexpected errors.
+| Event | Level | When, and what it carries |
+|---|---|---|
+| `config_loaded` | info | the parsed configuration: `operation`, `log_level`, `on_exists`, and `password` / `output_password` as presence only (`unset` / `set(env)` / `set(file)`), never values |
+| `operation_started` | info | dispatch into merge or extract |
+| `input_opened` | info | per input: `input`, `pages`, `encrypted`, `algorithm`, `password_type` (`user` / `owner` / `empty`) |
+| `pdf_library_message` | warning | `detail` and `source`: damage the engine repaired (`source: qpdf`), or anything the PDF library or a Python warning routes through logging - those records bypass `PDFOPS_LOG_LEVEL` |
+| `password_unused` | warning | a password was supplied but no input needed it |
+| `security_downgrade` | warning | encrypted inputs merged into a plaintext output under `never`: `encrypted_inputs` |
+| `redaction_degraded` | warning | a supplied secret is shorter than four characters and is not scrubbed from free text |
+| `stale_temp_removed` | warning | a prior run's temp debris for this target was removed: `temp_file` |
+| `output_skipped` | info | merge under `skip`: the existing output is accepted as completed work, `output_path` |
+| `output_overwritten` | info | after the write: `output_path` for merge, `replaced` and `count` for extract |
+| `output_encrypted` | info | the merged output was encrypted: `algorithm`, `password_source` (`output` / `input-fallback`) |
+| `merge_written` | info | `output_path`, `pages_per_input`, `output_encrypted` |
+| `attachments_skipped` | info | extract under `skip`: `skipped` (names), `count` |
+| `attachment_extracted` | info | per file: `attachment`, `bytes`, and `original_name` when sanitization changed it (capped at 200 characters) |
+| `operation_complete` | info | terminal, exit 0. Always `operation`, `exit_code`, `duration_s`. Merge adds `inputs_merged`, `pages`, `bytes_written`, `output_path`, `output_encrypted`, or under `skip` only `skipped: true` and `output_path`. Extract adds `attachments_extracted`, `bytes_written`, and `attachments_skipped` when any file was skipped |
+| `operation_failed` | error | terminal, exit 1-6. Always `error_code`, `exit_code`, `duration_s`. Predictable failures add `error_message` and `context`; an unexpected error (exit 1) adds `exc_type` and `traceback` instead |
 
 ### Error codes
 

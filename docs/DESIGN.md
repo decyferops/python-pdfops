@@ -43,7 +43,10 @@ Small modules with one-way dependencies:
 An interactive map of these modules - each node linking to the source lines it
 describes - lives at [`diagrams/index.html`](diagrams/index.html#architecture),
 alongside diagrams of the retry lifecycle, the extract trust boundary, and the
-password flow, all navigable from one page.
+password flow, all navigable from one page. The same structure drawn to render on
+GitHub - deployment context, module graph, run sequence, failure taxonomy, trust
+boundary, retry machine, test oracle, delivery pipeline - is
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 Cross-cutting rules: unknown or operation-inapplicable `PDFOPS_*` variables are hard
 errors - a silently ignored misspelling becomes a confusing downstream failure

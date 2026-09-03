@@ -16,6 +16,12 @@ Review proposal branch `review/toolchain-structure-pydantic`, rebuilt on
   matching table in `docs/OPERATIONS.md`, and a test that fails when the two
   drift in either direction.
 - `inputs.py`: up-front input validation shared by merge and extract.
+- `docs/ARCHITECTURE.md`: eight Mermaid views that render on GitHub - deployment
+  context, module graph with every real import, run sequence, failure taxonomy,
+  extract trust boundary, retry state machine, test oracle, delivery pipeline -
+  each linking into the interactive diagrams. A test checks every module is on it.
+- `docs/OPERATIONS.md`: a complete log-event table (all 16 events, level and
+  fields), pinned by a test against what the code emits.
 - `CLAUDE.md` (where to read first, the gates, the conventions),
   `SECURITY.md`, `.github/dependabot.yml` (uv, GitHub Actions, Docker), and
   this changelog.
@@ -43,7 +49,16 @@ Review proposal branch `review/toolchain-structure-pydantic`, rebuilt on
 - `docs/scripts` and `scripts/` are linted and type-checked like the rest of
   the code.
 - README development section lists the format check CI enforces and the
-  one-time `pre-commit install`.
+  one-time `pre-commit install`; the documentation map now names the operations
+  guide and the architecture page, and the env-var table links to the sections
+  that define output encryption and the existing-output policy.
+- Operations guide accuracy: terminal-event fields as actually emitted (merge
+  under `skip`, the unexpected-error shape, `attachments_skipped` only when
+  something was skipped), stale-temp cleanup before the first write rather than
+  at startup, control-character rejection at resolution time, the four-character
+  scrub threshold and both scrubbed variables, casefolded dedup and the 200-byte
+  name cap, `OUTPUT_IS_DIRECTORY` for every policy, `MISSING_OUTPUT_PASSWORD`,
+  `security_downgrade` being level-filtered, and the flag needing `true`.
 
 ### Removed
 
