@@ -70,9 +70,9 @@ def _scrub(value: Any) -> Any:
                 value = value.replace(secret, "***")
         return value
     if isinstance(value, dict):
-        return {key: _scrub(item) for key, item in value.items()}  # pyright: ignore[reportUnknownVariableType]
+        return {key: _scrub(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):
-        return [_scrub(item) for item in value]  # pyright: ignore[reportUnknownVariableType]
+        return [_scrub(item) for item in value]
     return value
 
 

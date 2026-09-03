@@ -36,6 +36,7 @@ import re
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from itertools import pairwise
 from pathlib import Path
 
 from _standard_parser import (
@@ -67,9 +68,7 @@ REQUIRED_ANCHOR_FIELDS: tuple[str, ...] = (
 )
 
 GREEN_STATUS_ICON = "🟢"
-SUMMARY_PLACEHOLDERS: frozenset[str] = frozenset(
-    {"tbd", "todo", "tba", "-", " - ", "n/a"}
-)
+SUMMARY_PLACEHOLDERS: frozenset[str] = frozenset({"tbd", "todo", "tba", "-", " - ", "n/a"})
 
 
 @dataclass
@@ -126,11 +125,7 @@ def parse_master_register(
         if stripped == "## Master Register":
             in_master = True
             continue
-        if (
-            in_master
-            and (stripped.startswith("## ") or stripped.startswith("### "))
-            and stripped != "## Master Register"
-        ):
+        if in_master and stripped.startswith(("## ", "### ")) and stripped != "## Master Register":
             in_master = False
         if not in_master:
             continue
@@ -165,9 +160,7 @@ def parse_master_register(
     return decisions, total_claimed
 
 
-def parse_anchor_pages(
-    lines: list[str], decisions: dict[str, Decision], report: Report
-) -> None:
+def parse_anchor_pages(lines: list[str], decisions: dict[str, Decision], report: Report) -> None:
     """Populate anchor_fields on each Decision by reading its anchor page."""
     i = 0
     n = len(lines)
@@ -203,11 +196,7 @@ def parse_anchor_pages(
         j = i + 1
         while j < n:
             sub = lines[j].rstrip("\n")
-            if (
-                ANCHOR_HEADING_RE.match(sub)
-                or sub.startswith("## ")
-                or sub.startswith("---")
-            ):
+            if ANCHOR_HEADING_RE.match(sub) or sub.startswith(("## ", "---")):
                 break
             fm = ANCHOR_FIELD_RE.match(sub)
             if fm:
@@ -233,11 +222,11 @@ def check_sequence(decisions: dict[str, Decision], report: Report) -> None:
         return
     if nums[0] != 1:
         report.err(f"ID sequence starts at D-{nums[0]:03d}, expected D-001")
-    for prev, curr in zip(nums, nums[1:]):
+    for prev, curr in pairwise(nums):
         if curr != prev + 1:
             report.err(
                 f"ID sequence gap: D-{prev:03d} -> D-{curr:03d} "
-                f"(missing D-{prev+1:03d}..D-{curr-1:03d})"
+                f"(missing D-{prev + 1:03d}..D-{curr - 1:03d})"
             )
 
 
@@ -258,14 +247,11 @@ def check_areas(decisions: dict[str, Decision], report: Report) -> None:
     for did, d in sorted(decisions.items()):
         if d.area not in AREAS:
             report.err(
-                f"{did}: area '{d.area}' not in standard's taxonomy "
-                f"({', '.join(sorted(AREAS))})"
+                f"{did}: area '{d.area}' not in standard's taxonomy ({', '.join(sorted(AREAS))})"
             )
         anchor_area = d.anchor_fields.get("Area", "").strip()
         if anchor_area and anchor_area != d.area:
-            report.err(
-                f"{did}: area mismatch - master='{d.area}' anchor='{anchor_area}'"
-            )
+            report.err(f"{did}: area mismatch - master='{d.area}' anchor='{anchor_area}'")
 
 
 def check_vocabularies(decisions: dict[str, Decision], report: Report) -> None:
@@ -311,9 +297,7 @@ def check_vocabularies(decisions: dict[str, Decision], report: Report) -> None:
             )
 
 
-def check_index_counts(
-    lines: list[str], decisions: dict[str, Decision], report: Report
-) -> None:
+def check_index_counts(lines: list[str], decisions: dict[str, Decision], report: Report) -> None:
     """Verify the 'Index by area' table agrees with the master register."""
     actual_counts: Counter[str] = Counter(d.area for d in decisions.values())
     actual_ids: dict[str, list[str]] = defaultdict(list)
@@ -353,20 +337,18 @@ def check_index_counts(
                 if count != len(decisions):
                     report.err(
                         f"Index by area: Total count {count} != actual {len(decisions)} "
-                        f"(line {i+1})"
+                        f"(line {i + 1})"
                     )
             else:
                 claimed_areas.add(area)
                 if area not in AREAS:
-                    report.err(
-                        f"Index by area: unknown area '{area}' at line {i+1}"
-                    )
+                    report.err(f"Index by area: unknown area '{area}' at line {i + 1}")
                     i += 1
                     continue
                 if count != actual_counts[area]:
                     report.err(
                         f"Index by area: area '{area}' count {count} != actual "
-                        f"{actual_counts[area]} at line {i+1}"
+                        f"{actual_counts[area]} at line {i + 1}"
                     )
                 listed = sorted(set(ID_RE.findall(ids_cell)))
                 actual_set = sorted({i.split("-")[1] for i in actual_ids[area]})
@@ -375,11 +357,11 @@ def check_index_counts(
                     extra = sorted(set(listed) - set(actual_set))
                     parts = []
                     if missing:
-                        parts.append(f"missing {', '.join('D-'+m for m in missing)}")
+                        parts.append(f"missing {', '.join('D-' + m for m in missing)}")
                     if extra:
-                        parts.append(f"extra {', '.join('D-'+e for e in extra)}")
+                        parts.append(f"extra {', '.join('D-' + e for e in extra)}")
                     report.err(
-                        f"Index by area: area '{area}' ID list drift at line {i+1} - "
+                        f"Index by area: area '{area}' ID list drift at line {i + 1} - "
                         + "; ".join(parts)
                     )
         i += 1
@@ -390,8 +372,7 @@ def check_index_counts(
     for area in AREAS:
         if actual_counts[area] and area not in claimed_areas:
             report.err(
-                f"Index by area: area '{area}' has {actual_counts[area]} "
-                f"decisions but no row"
+                f"Index by area: area '{area}' has {actual_counts[area]} decisions but no row"
             )
 
 
@@ -410,9 +391,7 @@ def check_related_ids(decisions: dict[str, Decision], report: Report) -> None:
                     )
 
 
-def check_doc_links(
-    decisions: dict[str, Decision], docs_root: Path, report: Report
-) -> None:
+def check_doc_links(decisions: dict[str, Decision], docs_root: Path, report: Report) -> None:
     """Every `discussion` / `Where` link target (relative path) must exist in docs/."""
     for did, d in sorted(decisions.items()):
         candidates: list[tuple[str, str]] = []
@@ -431,10 +410,7 @@ def check_doc_links(
                     continue
                 resolved = (docs_root / path_part).resolve()
                 if not resolved.exists():
-                    report.err(
-                        f"{did}: {label} link '{path_part}' -> {resolved} "
-                        f"does not exist"
-                    )
+                    report.err(f"{did}: {label} link '{path_part}' -> {resolved} does not exist")
 
 
 def check_green_summaries(decisions: dict[str, Decision], report: Report) -> None:
@@ -457,9 +433,7 @@ def check_green_summaries(decisions: dict[str, Decision], report: Report) -> Non
             )
 
 
-def check_adr_references(
-    lines: list[str], decisions: dict[str, Decision], report: Report
-) -> None:
+def check_adr_references(lines: list[str], decisions: dict[str, Decision], report: Report) -> None:
     """Every ``ADR-###`` link in the master register's "ADR" column must
     resolve to an ``## ADR-###:`` heading in the same document."""
     existing_adrs: set[str] = set()
@@ -497,7 +471,8 @@ def check_decide_under_assumption_cross_links(
     DECISION_TRACKING_STANDARD.md for the rationale.
     """
     assumed = [
-        d for d in decisions.values()
+        d
+        for d in decisions.values()
         if "assumed" in d.anchor_fields.get("Status", d.status).lower()
     ]
     if not assumed:
@@ -557,13 +532,9 @@ def main(argv: list[str]) -> int:
     check_decide_under_assumption_cross_links(decisions, docs_root, report)
 
     if total_claimed is not None and total_claimed != len(decisions):
-        report.err(
-            f"Counts line claims {total_claimed} total decisions, actual = {len(decisions)}"
-        )
+        report.err(f"Counts line claims {total_claimed} total decisions, actual = {len(decisions)}")
 
-    rel_path = (
-        path.relative_to(Path.cwd()) if path.is_relative_to(Path.cwd()) else path
-    )
+    rel_path = path.relative_to(Path.cwd()) if path.is_relative_to(Path.cwd()) else path
     print(f"Parsed {len(decisions)} decisions from {rel_path}")
     if report.warnings:
         print(f"\n{len(report.warnings)} warning(s):")

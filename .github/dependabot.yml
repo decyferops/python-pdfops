@@ -1,0 +1,19 @@
+# Keeps the three pinned surfaces current: the uv lockfile, the SHA-pinned
+# actions in ci.yml, and the digest-pinned images in the Dockerfile.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-tooling:
+        patterns: [ruff, pyright, pytest, pre-commit]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly

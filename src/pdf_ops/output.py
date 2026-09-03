@@ -13,7 +13,7 @@ import errno
 import os
 import tempfile
 from collections.abc import Generator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import NoReturn
 
@@ -128,7 +128,7 @@ def atomic_output(path: Path) -> Generator[Path]:
         yield tmp_path
         with tmp_path.open("rb") as handle:
             os.fsync(handle.fileno())
-        os.replace(tmp_path, path)
+        tmp_path.replace(path)
         _fsync_dir(path.parent)
     except OSError as err:
         _cleanup(tmp_path)
@@ -167,10 +167,8 @@ def _translate_os_error(err: OSError, path: Path) -> Exception:
 
 
 def _cleanup(tmp_path: Path) -> None:
-    try:
+    with suppress(OSError):  # best effort - never mask the original failure
         tmp_path.unlink(missing_ok=True)
-    except OSError:  # best effort - never mask the original failure
-        pass
 
 
 def _fsync_dir(directory: Path) -> None:

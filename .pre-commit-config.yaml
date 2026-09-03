@@ -1,6 +1,9 @@
+# The Python tools run through uv so that pre-commit, CI and a developer's
+# shell all use the single version pinned in uv.lock. Only the generic
+# hygiene hooks come from a remote repo.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
       - id: check-toml
@@ -8,14 +11,23 @@ repos:
       - id: end-of-file-fixer
       - id: check-added-large-files
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.9
+  - repo: local
     hooks:
       - id: ruff-check
-        args: ["--fix"]
+        name: ruff check
+        entry: uv run --locked ruff check --fix --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
       - id: ruff-format
-
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.408
-    hooks:
+        name: ruff format
+        entry: uv run --locked ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
       - id: pyright
+        name: pyright
+        entry: uv run --locked pyright
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false

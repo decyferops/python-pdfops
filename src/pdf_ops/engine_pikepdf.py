@@ -245,8 +245,7 @@ def _walk_name_tree(node: Any, out: list[tuple[Any, Any]], seen: set[tuple[int, 
             _walk_name_tree(kid, out, seen)
     names: Any = node.get("/Names")
     if isinstance(names, pikepdf.Array):
-        for index in range(0, len(names) - 1, 2):
-            out.append((names[index], names[index + 1]))
+        out.extend((names[index], names[index + 1]) for index in range(0, len(names) - 1, 2))
 
 
 def _describe_encryption(pdf: pikepdf.Pdf) -> str:

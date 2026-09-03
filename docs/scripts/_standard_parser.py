@@ -58,6 +58,7 @@ ANCHOR_FIELD_RE = re.compile(r"^-\s*\*\*([^:]+):\*\*\s*(.*)$")
 # Vocabulary parsing
 # -----------------------------------------------------------------------------
 
+
 # Standard path resolution (v0.11.27): prefer --standard-path CLI arg if
 # provided, fall back to relative-to-script default. The default resolves
 # correctly when this script lives at docs/scripts/ in a scaffolded project
@@ -68,12 +69,13 @@ ANCHOR_FIELD_RE = re.compile(r"^-\s*\*\*([^:]+):\*\*\s*(.*)$")
 # legacy projects whose docs/scripts/ doesn't have a copy of this script.
 def _resolve_standard_path() -> Path:
     import sys
+
     if "--standard-path" in sys.argv:
         idx = sys.argv.index("--standard-path")
         if idx + 1 < len(sys.argv):
             path = Path(sys.argv[idx + 1]).resolve()
             # Pop the flag + value so consuming scripts' argparse doesn't reject them.
-            del sys.argv[idx:idx + 2]
+            del sys.argv[idx : idx + 2]
             return path
     return Path(__file__).resolve().parent.parent / "DECISION_TRACKING_STANDARD.md"
 
@@ -134,8 +136,8 @@ def _abort(msg: str) -> None:
 def _load() -> dict[str, frozenset[str]]:
     if not STANDARD_PATH.exists():
         _abort(
-            f"DECISION_TRACKING_STANDARD.md not found - required for vocabulary parsing. "
-            f"Run /init-decisions to scaffold it."
+            "DECISION_TRACKING_STANDARD.md not found - required for vocabulary parsing. "
+            "Run /init-decisions to scaffold it."
         )
     text = STANDARD_PATH.read_text(encoding="utf-8")
     sections = _parse_vocab_sections(text)

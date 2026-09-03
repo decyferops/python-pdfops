@@ -9,7 +9,7 @@ import pytest
 
 from pdf_ops.logging_setup import (
     JsonFormatter,
-    _ThirdPartyEventFilter,  # pyright: ignore[reportPrivateUsage]
+    _ThirdPartyEventFilter,
     emit_terminal,
     setup_logging,
 )

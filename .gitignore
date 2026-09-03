@@ -7,4 +7,3 @@ dist/
 build/
 *.egg-info/
 .in_use/
-.coverage

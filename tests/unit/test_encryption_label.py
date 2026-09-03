@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from pdf_ops.engine_pikepdf import (
-    _describe_encryption_raw,  # pyright: ignore[reportPrivateUsage]
+    _describe_encryption_raw,
 )
 
 pytestmark = pytest.mark.unit
