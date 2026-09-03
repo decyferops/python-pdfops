@@ -1,8 +1,6 @@
 """The failed-open encryption label: a raw scan of an attacker-controlled
 file that must stay correct on real layouts and harmless on hostile ones."""
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from pathlib import Path
 

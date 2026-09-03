@@ -5,8 +5,6 @@ not a dict) is accepted by the parsing layer, and that the process exit code
 and stdout/stderr split match the documented contract.
 """
 
-from __future__ import annotations
-
 import json
 import subprocess
 import sys

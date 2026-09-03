@@ -5,8 +5,6 @@ step log. The log message is a stable machine-readable event token; structured
 detail is passed via ``extra`` and merged into the payload.
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import re

@@ -10,8 +10,6 @@ each input's encryption facts (for events and the output-encryption policy)
 before any output work starts.
 """
 
-from __future__ import annotations
-
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path

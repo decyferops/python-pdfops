@@ -7,8 +7,6 @@ must fail fast with exit code 2. Deliberately filesystem-free: existence and
 readability of paths are operation-stage concerns, not configuration ones.
 """
 
-from __future__ import annotations
-
 import logging
 import os
 from collections.abc import Mapping

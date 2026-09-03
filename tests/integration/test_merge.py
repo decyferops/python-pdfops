@@ -1,7 +1,5 @@
 """End-to-end merge runs through run(env): the merge operator contract."""
 
-from __future__ import annotations
-
 import errno
 import os
 from collections.abc import Callable

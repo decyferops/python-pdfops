@@ -5,8 +5,6 @@ in disguise - nothing an attachment says may place a file outside
 PDFOPS_OUTPUT_DIR.
 """
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from pathlib import Path
 

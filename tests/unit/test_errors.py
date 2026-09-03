@@ -1,7 +1,5 @@
 """The exception-to-exit-code mapping is the external API - pin it."""
 
-from __future__ import annotations
-
 import re
 from pathlib import Path
 

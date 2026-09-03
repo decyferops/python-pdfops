@@ -5,8 +5,6 @@ reported in one failure: an operator fixing a broken workflow should learn
 about every bad input from a single run, not one per retry.
 """
 
-from __future__ import annotations
-
 from collections.abc import Sequence
 from pathlib import Path
 

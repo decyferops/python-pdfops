@@ -12,8 +12,6 @@ clear error pointing at the standard file and exit non-zero. Edit the standard's
 controlled-vocabularies section to change vocabularies - every script picks up the change.
 """
 
-from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path

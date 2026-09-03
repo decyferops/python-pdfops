@@ -8,8 +8,6 @@ PDFOPS_TEST_MOUNT_DIR) because Docker Desktop on macOS only shares selected
 host paths, and pytest's default tmp dir is not among them.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import shutil

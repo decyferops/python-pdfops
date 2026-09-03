@@ -7,8 +7,6 @@ renamed over in one step, so a crashed or failed run never leaves a partial
 PDF where a downstream workflow step could read it.
 """
 
-from __future__ import annotations
-
 import errno
 import os
 import tempfile

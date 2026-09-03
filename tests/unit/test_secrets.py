@@ -1,7 +1,5 @@
 """The Secret wrapper and the log-redaction layer - the no-leak machinery."""
 
-from __future__ import annotations
-
 import json
 import logging
 import sys

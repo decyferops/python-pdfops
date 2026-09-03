@@ -30,8 +30,6 @@ Usage:
 Exit code 0 on clean run, 1 on any violation. Prints one line per issue.
 """
 
-from __future__ import annotations
-
 import re
 import sys
 from collections import Counter, defaultdict

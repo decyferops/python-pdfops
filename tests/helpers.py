@@ -4,8 +4,6 @@ A plain module rather than conftest.py: conftest is a pytest plugin, and
 importing names from it couples tests to how pytest loaded it.
 """
 
-from __future__ import annotations
-
 import logging
 from collections.abc import Callable
 from typing import Any

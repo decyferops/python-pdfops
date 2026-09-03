@@ -1,7 +1,5 @@
 """The JSON log line shape is an operator interface - pin it."""
 
-from __future__ import annotations
-
 import json
 import logging
 import sys

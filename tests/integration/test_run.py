@@ -6,8 +6,6 @@ enforces on every run: nothing on stderr, every line valid JSON, and exactly
 one terminal event, emitted last.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import Any
 

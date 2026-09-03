@@ -5,8 +5,6 @@ each test states exactly what property its file has, and fixtures never drift
 from the library version.
 """
 
-from __future__ import annotations
-
 import json
 from collections.abc import Callable
 from pathlib import Path

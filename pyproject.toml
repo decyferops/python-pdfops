@@ -9,9 +9,25 @@ authors = [
     { email = "29573973+Radko-D@users.noreply.github.com" }
 ]
 requires-python = ">=3.14"
+classifiers = [
+    # Guard against an accidental `uv publish`: PyPI refuses this classifier.
+    # Remove it when the package is meant to be published.
+    "Private :: Do Not Upload",
+    "Environment :: No Input/Output (Daemon)",
+    "Intended Audience :: System Administrators",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Office/Business",
+    "Typing :: Typed",
+]
 dependencies = [
     "pikepdf>=10.12.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/Radko-D/python-pdfops"
+Changelog = "https://github.com/Radko-D/python-pdfops/blob/main/CHANGELOG.md"
+Design = "https://github.com/Radko-D/python-pdfops/blob/main/docs/DESIGN.md"
 
 [project.scripts]
 pdf-ops = "pdf_ops.__main__:main"

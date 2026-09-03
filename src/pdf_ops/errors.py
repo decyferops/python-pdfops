@@ -7,8 +7,6 @@ Fine-grained detail travels in the machine-readable ``error_code`` string
 carried by every raised error and emitted in the terminal log event.
 """
 
-from __future__ import annotations
-
 from enum import IntEnum, StrEnum
 from typing import Any
 

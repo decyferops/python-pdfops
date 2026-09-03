@@ -174,9 +174,14 @@ retry strategy, measured resource sizing - lives in
 
 ```sh
 uv sync                       # deps + venv
+uv run pre-commit install     # once: the hooks run the same tools through uv
 uv run pytest                 # unit + integration tests
 uv run pytest -m container    # container-contract tests (needs Docker)
 uv run ruff check .           # lint
+uv run ruff format --check .  # formatting (CI enforces it)
 uv run pyright                # strict type check
 uv run pre-commit run -a      # full hook chain
 ```
+
+Changes are recorded in [`CHANGELOG.md`](CHANGELOG.md); conventions for contributors
+and coding agents are in [`CLAUDE.md`](CLAUDE.md).

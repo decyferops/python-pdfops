@@ -6,8 +6,6 @@ designed for exhaustive table testing - and the resolved target of every
 write is verified to stay inside the output directory.
 """
 
-from __future__ import annotations
-
 import logging
 from dataclasses import dataclass
 from typing import Any

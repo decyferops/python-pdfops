@@ -6,8 +6,6 @@ appear in ANY output the process produces, on any path - success, failure,
 or crash.
 """
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from pathlib import Path
 

@@ -5,8 +5,6 @@ Workflow engines are at-least-once: every scenario here is some flavor of
 "the step ran before - what does running it again do?"
 """
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from pathlib import Path
 

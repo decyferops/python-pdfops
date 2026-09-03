@@ -1,7 +1,5 @@
 """Top-level orchestration: the single error boundary and operation dispatch."""
 
-from __future__ import annotations
-
 import logging
 import time
 from collections.abc import Callable, Mapping

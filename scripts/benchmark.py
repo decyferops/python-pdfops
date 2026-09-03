@@ -12,8 +12,6 @@ Usage: python3 scripts/benchmark.py [--image pdf-ops:bench] [--workdir DIR]
 The workdir defaults to /tmp/pdfops-bench (a path Docker Desktop shares).
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import os

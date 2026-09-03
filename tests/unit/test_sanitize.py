@@ -4,8 +4,6 @@ Attachment names are attacker-controlled strings written to a mounted
 filesystem - this table is the security contract for that boundary.
 """
 
-from __future__ import annotations
-
 import pytest
 
 from pdf_ops.engine import Attachment

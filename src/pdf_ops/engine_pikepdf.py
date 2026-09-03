@@ -5,8 +5,6 @@ the application taxonomy so callers never see library-specific errors, and is
 the only code that calls ``Secret.reveal()``.
 """
 
-from __future__ import annotations
-
 import re
 import warnings
 from collections.abc import Generator, Sequence
