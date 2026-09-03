@@ -34,6 +34,7 @@ Small modules with one-way dependencies:
 | `main.py` | `run(env) -> int` - the single error boundary; emits the one terminal event |
 | `engine.py` | the `PdfEngine` Protocol - the library swap seam |
 | `engine_pikepdf.py` | the **only** module importing pikepdf; translates qpdf's failure modes into the taxonomy |
+| `inputs.py` | up-front input validation shared by both operations; every bad input reported in one failure |
 | `merge.py` / `extract.py` | orchestration: validate everything, then write |
 | `output.py` | atomic writes, existing-output policy, stale-temp cleanup |
 | `secrets.py` | the whole secret lifecycle: `Secret` wrapper, source refs, resolution, scrub registration |

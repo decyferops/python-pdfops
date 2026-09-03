@@ -15,7 +15,7 @@ from typing import Any
 from pdf_ops.config import ExtractConfig, OnExists
 from pdf_ops.engine import Attachment, get_engine
 from pdf_ops.errors import InputError, OutputError
-from pdf_ops.merge import validate_inputs
+from pdf_ops.inputs import validate_inputs
 from pdf_ops.output import atomic_output, check_output_dir, clean_stale_temps
 from pdf_ops.secrets import Secrets
 
