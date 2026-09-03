@@ -14,7 +14,7 @@ from typing import Any
 
 from pdf_ops.config import ExtractConfig, OnExists
 from pdf_ops.engine import Attachment, get_engine
-from pdf_ops.errors import InputError, OutputError
+from pdf_ops.errors import ErrorCode, InputError, OutputError
 from pdf_ops.inputs import validate_inputs
 from pdf_ops.output import atomic_output, check_output_dir, clean_stale_temps
 from pdf_ops.secrets import Secrets
@@ -59,7 +59,7 @@ def run_extract(config: ExtractConfig, secrets: Secrets, logger: logging.Logger)
             raise InputError(
                 f"{config.input} contains no embedded attachments "
                 "(failing because PDFOPS_FAIL_ON_NO_ATTACHMENTS=true)",
-                error_code="NO_ATTACHMENTS",
+                error_code=ErrorCode.NO_ATTACHMENTS,
                 context={"input": str(config.input)},
             )
         return {"attachments_extracted": 0, "bytes_written": 0}
@@ -77,7 +77,7 @@ def run_extract(config: ExtractConfig, secrets: Secrets, logger: logging.Logger)
     if directories:
         raise OutputError(
             f"target name(s) are directories in {config.output_dir}: {', '.join(directories)}",
-            error_code="OUTPUT_IS_DIRECTORY",
+            error_code=ErrorCode.OUTPUT_IS_DIRECTORY,
             context={"output_dir": str(config.output_dir), "directories": directories},
         )
 
@@ -99,7 +99,7 @@ def run_extract(config: ExtractConfig, secrets: Secrets, logger: logging.Logger)
                     f"{len(conflicts)} file(s) already exist in {config.output_dir}: "
                     f"{', '.join(conflicts)} (refusing to overwrite; "
                     "set PDFOPS_ON_EXISTS to overwrite or skip for retry semantics)",
-                    error_code="OUTPUT_EXISTS",
+                    error_code=ErrorCode.OUTPUT_EXISTS,
                     context={"output_dir": str(config.output_dir), "conflicts": conflicts},
                 )
             case OnExists.SKIP:

@@ -24,7 +24,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from pdf_ops.errors import ConfigError
+from pdf_ops.errors import ConfigError, ErrorCode
 from pdf_ops.logging_setup import register_secret_value
 
 
@@ -84,7 +84,7 @@ class FileSecret:
         except OSError as err:
             raise ConfigError(
                 f"cannot read password file {self.path}: {err.strerror or err}",
-                error_code="PASSWORD_FILE_UNREADABLE",
+                error_code=ErrorCode.PASSWORD_FILE_UNREADABLE,
                 context={"path": str(self.path)},
             ) from err
         except UnicodeDecodeError as err:
@@ -92,14 +92,14 @@ class FileSecret:
             # secret and its position.
             raise ConfigError(
                 f"password file {self.path} is not valid UTF-8 text",
-                error_code="PASSWORD_FILE_UNREADABLE",
+                error_code=ErrorCode.PASSWORD_FILE_UNREADABLE,
                 context={"path": str(self.path)},
             ) from err
         raw = raw.removesuffix("\n").removesuffix("\r")
         if not raw:
             raise ConfigError(
                 f"password file {self.path} is empty",
-                error_code="EMPTY_PASSWORD",
+                error_code=ErrorCode.EMPTY_PASSWORD,
                 context={"path": str(self.path)},
             )
         _reject_control_characters(raw, str(self.path))
@@ -162,6 +162,6 @@ def _reject_control_characters(value: str, origin: str) -> None:
         raise ConfigError(
             f"the password from {origin} contains control characters "
             "(check for encoding or copy-paste issues)",
-            error_code="PASSWORD_UNSUPPORTED_CHARACTERS",
+            error_code=ErrorCode.PASSWORD_UNSUPPORTED_CHARACTERS,
             context={"source": origin},
         )

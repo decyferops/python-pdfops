@@ -12,7 +12,7 @@ from pypdf import PdfReader
 
 import pdf_ops.merge
 from pdf_ops.engine import OpenedInput
-from pdf_ops.errors import InvalidPdfError
+from pdf_ops.errors import ErrorCode, InvalidPdfError
 from tests.conftest import RunApp, _build_raw_pdf
 
 pytestmark = pytest.mark.integration
@@ -351,7 +351,7 @@ class TestFailureAfterBytesWritten:
         out_dir: Path,
         run_app: RunApp,
     ) -> None:
-        fake_engine(InvalidPdfError("boom mid-write", error_code="CORRUPT_PDF", context={}))
+        fake_engine(InvalidPdfError("boom mid-write", error_code=ErrorCode.CORRUPT_PDF, context={}))
         source = make_pdf()
         code, _ = run_app(merge_env([source], out_dir / "m.pdf"))
         assert code == 4

@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 from pdf_ops.config import MergeConfig, OutputEncryption
 from pdf_ops.engine import OpenedInput, get_engine
-from pdf_ops.errors import ConfigError
+from pdf_ops.errors import ConfigError, ErrorCode
 from pdf_ops.inputs import validate_inputs
 from pdf_ops.output import atomic_output, check_output_path, clean_stale_temps
 from pdf_ops.secrets import Secret, Secrets
+
+# Where the output password came from, for the output_encrypted event.
+type PasswordSource = Literal["output", "input-fallback"]
 
 
 def run_merge(
@@ -106,7 +109,7 @@ def run_merge(
 
 def _choose_output_password(
     config: MergeConfig, secrets: Secrets, encrypted_count: int
-) -> tuple[Secret | None, str | None]:
+) -> tuple[Secret | None, PasswordSource | None]:
     """Apply the output-encryption policy; returns (password, source-label).
 
     The fallback to the input password uses only an *explicitly supplied*
@@ -127,6 +130,6 @@ def _choose_output_password(
         f"output encryption is required (PDFOPS_OUTPUT_ENCRYPTION={mode.value}) but no "
         "explicit password is available - the encrypted input(s) opened with the empty "
         "password; supply PDFOPS_OUTPUT_PASSWORD_FILE or PDFOPS_OUTPUT_PASSWORD",
-        error_code="MISSING_OUTPUT_PASSWORD",
+        error_code=ErrorCode.MISSING_OUTPUT_PASSWORD,
         context={"output_encryption": mode.value},
     )

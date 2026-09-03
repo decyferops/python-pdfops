@@ -8,7 +8,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from pdf_ops.config import Config, ExtractConfig, MergeConfig, parse_config
-from pdf_ops.errors import ExitCode, PdfOpsError
+from pdf_ops.errors import ErrorCode, ExitCode, PdfOpsError
 from pdf_ops.extract import run_extract
 from pdf_ops.logging_setup import emit_terminal, setup_logging
 from pdf_ops.merge import run_merge
@@ -71,7 +71,7 @@ def run(env: Mapping[str, str]) -> int:
             logging.ERROR,
             "operation_failed",
             {
-                "error_code": "UNEXPECTED_ERROR",
+                "error_code": ErrorCode.UNEXPECTED_ERROR,
                 "exit_code": int(ExitCode.UNEXPECTED),
                 "duration_s": round(time.monotonic() - started, 3),
             },

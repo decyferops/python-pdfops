@@ -17,7 +17,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import ClassVar, Literal
 
-from pdf_ops.errors import ConfigError
+from pdf_ops.errors import ConfigError, ErrorCode
 from pdf_ops.secrets import EnvSecret, FileSecret, Secret, SecretRef
 
 ENV_PREFIX = "PDFOPS_"
@@ -178,7 +178,7 @@ def _reject_unknown_vars(env: Mapping[str, str]) -> None:
         raise ConfigError(
             f"unknown environment variable(s): {', '.join(unknown)}; "
             f"accepted: {', '.join(sorted(KNOWN_VARS))}",
-            error_code="UNKNOWN_VAR",
+            error_code=ErrorCode.UNKNOWN_VAR,
             context={"unknown_vars": unknown},
         )
 
@@ -195,7 +195,7 @@ def _reject_inapplicable_vars(
     if present:
         raise ConfigError(
             f"variable(s) not applicable to operation '{operation.value}': {', '.join(present)}",
-            error_code="INAPPLICABLE_VAR",
+            error_code=ErrorCode.INAPPLICABLE_VAR,
             context={"operation": operation.value, "inapplicable_vars": present},
         )
 
@@ -205,7 +205,7 @@ def _parse_operation(env: Mapping[str, str]) -> Operation:
     if not raw:
         raise ConfigError(
             f"{VAR_OPERATION} is required (accepted values: merge, extract)",
-            error_code="MISSING_VAR",
+            error_code=ErrorCode.MISSING_VAR,
             context={"var": VAR_OPERATION},
         )
     try:
@@ -213,7 +213,7 @@ def _parse_operation(env: Mapping[str, str]) -> Operation:
     except ValueError:
         raise ConfigError(
             f"{VAR_OPERATION} has invalid value {raw!r} (accepted values: merge, extract)",
-            error_code="INVALID_OPERATION",
+            error_code=ErrorCode.INVALID_OPERATION,
             context={"var": VAR_OPERATION, "value": raw},
         ) from None
 
@@ -227,7 +227,7 @@ def _parse_log_level(env: Mapping[str, str]) -> int:
         raise ConfigError(
             f"{VAR_LOG_LEVEL} has invalid value {raw!r} "
             f"(accepted values: {', '.join(_LOG_LEVELS).lower()}, case-insensitive)",
-            error_code="INVALID_LOG_LEVEL",
+            error_code=ErrorCode.INVALID_LOG_LEVEL,
             context={"var": VAR_LOG_LEVEL, "value": raw},
         )
     return level
@@ -239,7 +239,7 @@ def _parse_inputs(env: Mapping[str, str]) -> tuple[Path, ...]:
         raise ConfigError(
             f"{VAR_INPUTS} is required for merge "
             f"(ordered file paths separated by {INPUTS_SEPARATOR!r})",
-            error_code="MISSING_VAR",
+            error_code=ErrorCode.MISSING_VAR,
             context={"var": VAR_INPUTS},
         )
     parts = [part.strip() for part in raw.split(INPUTS_SEPARATOR)]
@@ -247,7 +247,7 @@ def _parse_inputs(env: Mapping[str, str]) -> tuple[Path, ...]:
         raise ConfigError(
             f"{VAR_INPUTS} contains an empty path component "
             f"(check for stray {INPUTS_SEPARATOR!r} separators)",
-            error_code="INVALID_INPUTS",
+            error_code=ErrorCode.INVALID_INPUTS,
             context={"var": VAR_INPUTS, "value": raw},
         )
     paths = [Path(part) for part in parts]
@@ -262,7 +262,7 @@ def _parse_inputs(env: Mapping[str, str]) -> tuple[Path, ...]:
         duplicates = sorted({part for part in parts if Path(part) in duplicated_paths})
         raise ConfigError(
             f"{VAR_INPUTS} lists the same path more than once: {', '.join(duplicates)}",
-            error_code="DUPLICATE_INPUTS",
+            error_code=ErrorCode.DUPLICATE_INPUTS,
             context={"var": VAR_INPUTS, "duplicates": duplicates},
         )
     return tuple(paths)
@@ -273,7 +273,7 @@ def _parse_output(env: Mapping[str, str]) -> Path:
     if not raw:
         raise ConfigError(
             f"{VAR_OUTPUT} is required for merge (path of the output PDF)",
-            error_code="MISSING_VAR",
+            error_code=ErrorCode.MISSING_VAR,
             context={"var": VAR_OUTPUT},
         )
     return Path(raw)
@@ -284,7 +284,7 @@ def _parse_single_path(env: Mapping[str, str], var: str, purpose: str) -> Path:
     if not raw:
         raise ConfigError(
             f"{var} is required for extract ({purpose})",
-            error_code="MISSING_VAR",
+            error_code=ErrorCode.MISSING_VAR,
             context={"var": var},
         )
     return Path(raw)
@@ -299,7 +299,7 @@ def _parse_flag(env: Mapping[str, str], var: str, *, default: bool = False) -> b
         return normalized == "true"
     raise ConfigError(
         f"{var} has invalid value {raw!r} (accepted values: true, false, case-insensitive)",
-        error_code="INVALID_FLAG",
+        error_code=ErrorCode.INVALID_FLAG,
         context={"var": var, "value": raw},
     )
 
@@ -316,7 +316,7 @@ def _parse_secret_pair(env: Mapping[str, str], value_var: str, file_var: str) ->
     if raw_value and raw_file:
         raise ConfigError(
             f"{value_var} and {file_var} are mutually exclusive - supply one",
-            error_code="CONFLICTING_PASSWORD_SOURCES",
+            error_code=ErrorCode.CONFLICTING_PASSWORD_SOURCES,
             context={"vars": [value_var, file_var]},
         )
     if raw_value:
@@ -336,7 +336,7 @@ def _parse_on_exists(env: Mapping[str, str]) -> OnExists:
         raise ConfigError(
             f"{VAR_ON_EXISTS} has invalid value {raw!r} "
             "(accepted values: fail, overwrite, skip, case-insensitive)",
-            error_code="INVALID_ON_EXISTS",
+            error_code=ErrorCode.INVALID_ON_EXISTS,
             context={"var": VAR_ON_EXISTS, "value": raw},
         ) from None
 
@@ -351,7 +351,7 @@ def _parse_output_encryption(env: Mapping[str, str]) -> OutputEncryption:
         raise ConfigError(
             f"{VAR_OUTPUT_ENCRYPTION} has invalid value {raw!r} "
             "(accepted values: never, inherit, always, case-insensitive)",
-            error_code="INVALID_OUTPUT_ENCRYPTION",
+            error_code=ErrorCode.INVALID_OUTPUT_ENCRYPTION,
             context={"var": VAR_OUTPUT_ENCRYPTION, "value": raw},
         ) from None
 
@@ -365,14 +365,14 @@ def _parse_output_password(env: Mapping[str, str], password: SecretRef | None) -
         raise ConfigError(
             f"an output password is supplied but {VAR_OUTPUT_ENCRYPTION} is 'never' "
             "(set it to 'inherit' or 'always', or remove the output password)",
-            error_code="OUTPUT_PASSWORD_WITHOUT_ENCRYPTION",
+            error_code=ErrorCode.OUTPUT_PASSWORD_WITHOUT_ENCRYPTION,
             context={"var": VAR_OUTPUT_ENCRYPTION},
         )
     if mode is OutputEncryption.ALWAYS and output_password is None and password is None:
         raise ConfigError(
             f"{VAR_OUTPUT_ENCRYPTION}=always requires an output password "
             f"({VAR_OUTPUT_PASSWORD_FILE}/{VAR_OUTPUT_PASSWORD}) or an input password to fall back to",
-            error_code="MISSING_OUTPUT_PASSWORD",
+            error_code=ErrorCode.MISSING_OUTPUT_PASSWORD,
             context={"var": VAR_OUTPUT_ENCRYPTION},
         )
     return output_password

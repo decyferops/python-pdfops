@@ -15,9 +15,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
 from pdf_ops.secrets import Secret
+
+# How an encrypted input opened: with the user or owner password supplied,
+# or through the spec-standard empty-password try.
+type PasswordKind = Literal["user", "owner", "empty"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,7 +41,7 @@ class OpenedInput:
     pages: int
     encrypted: bool
     algorithm: str | None
-    password_type: str | None
+    password_type: PasswordKind | None
     # Recoverable-damage messages the library reported while parsing
     # ("repairing", xref rebuilt, ...). The operation layer surfaces them as
     # events; anything unrecoverable raises instead.

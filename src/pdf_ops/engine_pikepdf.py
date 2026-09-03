@@ -15,8 +15,8 @@ from typing import Any, cast
 
 import pikepdf
 
-from pdf_ops.engine import Attachment, OpenedInput
-from pdf_ops.errors import InvalidPdfError, PasswordError
+from pdf_ops.engine import Attachment, OpenedInput, PasswordKind
+from pdf_ops.errors import ErrorCode, InvalidPdfError, PasswordError
 from pdf_ops.secrets import Secret
 
 # pikepdf converts PDF integers/reals/booleans/null to native Python values,
@@ -49,7 +49,7 @@ class PikepdfEngine:
             if password is None:
                 raise PasswordError(
                     f"{path} is encrypted ({algorithm}) and requires a password",
-                    error_code="PASSWORD_REQUIRED",
+                    error_code=ErrorCode.PASSWORD_REQUIRED,
                     context={"input": str(path), "algorithm": algorithm},
                 ) from None
             # The supplied password failed - but this input may not need it
@@ -62,7 +62,7 @@ class PikepdfEngine:
             except pikepdf.PasswordError:
                 raise PasswordError(
                     f"the supplied password does not open {path} ({algorithm})",
-                    error_code="WRONG_PASSWORD",
+                    error_code=ErrorCode.WRONG_PASSWORD,
                     context={"input": str(path), "algorithm": algorithm},
                 ) from None
             except pikepdf.PdfError as err:
@@ -74,14 +74,14 @@ class PikepdfEngine:
                 # remedy lives in the password class.
                 raise PasswordError(
                     f"{path} uses an encryption scheme this build cannot process",
-                    error_code="UNSUPPORTED_ENCRYPTION",
+                    error_code=ErrorCode.UNSUPPORTED_ENCRYPTION,
                     context={"input": str(path)},
                 ) from err
             raise _corrupt(path, err) from err
 
         encrypted = bool(pdf.is_encrypted)
         algorithm = _describe_encryption(pdf) if encrypted else None
-        password_type: str | None = None
+        password_type: PasswordKind | None = None
         if encrypted:
             if not used:
                 password_type = "empty"
@@ -148,7 +148,7 @@ class PikepdfEngine:
                 # turns out unreadable surfaces here without attribution.
                 raise InvalidPdfError(
                     f"a merge input could not be fully read while writing: {err}",
-                    error_code="CORRUPT_PDF",
+                    error_code=ErrorCode.CORRUPT_PDF,
                     context={"inputs": [str(one.path) for one in inputs]},
                 ) from err
             # Repairs discovered during the lazy copy accumulate on the
@@ -342,7 +342,7 @@ def _translated_data_error(path: Path, err: Exception) -> InvalidPdfError:
         # condition distinct from structural corruption.
         return InvalidPdfError(
             f"{path} uses a PDF feature this build cannot process: {err}",
-            error_code="UNSUPPORTED_PDF_FEATURE",
+            error_code=ErrorCode.UNSUPPORTED_PDF_FEATURE,
             context={"input": str(path)},
         )
     return _corrupt(path, err)
@@ -351,6 +351,6 @@ def _translated_data_error(path: Path, err: Exception) -> InvalidPdfError:
 def _corrupt(path: Path, err: Exception) -> InvalidPdfError:
     return InvalidPdfError(
         f"cannot parse {path} as a PDF: {err}",
-        error_code="CORRUPT_PDF",
+        error_code=ErrorCode.CORRUPT_PDF,
         context={"input": str(path)},
     )

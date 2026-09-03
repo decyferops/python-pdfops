@@ -119,6 +119,9 @@ mounted volumes with absolute in-container paths, the container runs as non-root
 | 5 | password required/wrong/unsupported |
 | 6 | output conflict or output location unusable |
 
+The finer-grained `error_code` carried by every `operation_failed` event is listed
+per exit code in [`docs/OPERATIONS.md`](docs/OPERATIONS.md#error-codes).
+
 ## Logging
 
 Output is JSON lines on stdout - one event per line, stderr stays empty. Lifecycle

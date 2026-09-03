@@ -130,3 +130,44 @@ event is never suppressed by `PDFOPS_LOG_LEVEL`:
 - `operation_failed` - `error_code` (machine-readable, finer-grained than the exit
   code), `error_message`, `exit_code`, `context` (e.g. the failing input), and a
   `traceback` for unexpected errors.
+
+### Error codes
+
+`error_code` values, grouped by the exit code they travel with. This is the
+complete vocabulary: a test checks the table against the `ErrorCode` enum in
+`errors.py`, so a new code cannot ship undocumented.
+
+| Code | Exit | Meaning |
+|---|---|---|
+| `UNEXPECTED_ERROR` | 1 | an internal error; the event carries `exc_type` and `traceback` |
+| `UNKNOWN_VAR` | 2 | a `PDFOPS_*` variable the application does not understand (probable typo) |
+| `INAPPLICABLE_VAR` | 2 | a variable that belongs to the other operation |
+| `MISSING_VAR` | 2 | a required variable is unset or empty |
+| `INVALID_OPERATION` | 2 | `PDFOPS_OPERATION` is not `merge` or `extract` |
+| `INVALID_LOG_LEVEL` | 2 | `PDFOPS_LOG_LEVEL` is not one of the accepted levels |
+| `INVALID_INPUTS` | 2 | `PDFOPS_INPUTS` has an empty path component |
+| `DUPLICATE_INPUTS` | 2 | `PDFOPS_INPUTS` lists the same path more than once |
+| `INVALID_FLAG` | 2 | a boolean variable is not `true` or `false` |
+| `INVALID_ON_EXISTS` | 2 | `PDFOPS_ON_EXISTS` is not `fail`, `overwrite` or `skip` |
+| `INVALID_OUTPUT_ENCRYPTION` | 2 | `PDFOPS_OUTPUT_ENCRYPTION` is not `never`, `inherit` or `always` |
+| `CONFLICTING_PASSWORD_SOURCES` | 2 | both the value and the file channel of one password are set |
+| `OUTPUT_PASSWORD_WITHOUT_ENCRYPTION` | 2 | an output password is supplied while output encryption is `never` |
+| `MISSING_OUTPUT_PASSWORD` | 2 | output encryption is required but no explicit password is available |
+| `PASSWORD_FILE_UNREADABLE` | 2 | the password file cannot be read or is not UTF-8 text |
+| `EMPTY_PASSWORD` | 2 | the password file is empty |
+| `PASSWORD_UNSUPPORTED_CHARACTERS` | 2 | the password contains control characters |
+| `INPUT_MISSING` | 3 | an input path does not exist or is not a regular file |
+| `INPUT_IS_DIRECTORY` | 3 | an input path is a directory |
+| `INPUT_UNREADABLE` | 3 | an input file cannot be opened for reading |
+| `NO_ATTACHMENTS` | 3 | the PDF has no attachments and `PDFOPS_FAIL_ON_NO_ATTACHMENTS=true` |
+| `NOT_A_PDF` | 4 | an input does not start with the `%PDF-` header |
+| `CORRUPT_PDF` | 4 | the PDF engine cannot parse or fully read the file |
+| `UNSUPPORTED_PDF_FEATURE` | 4 | the file uses a stream filter this build cannot decode |
+| `PASSWORD_REQUIRED` | 5 | the input is encrypted and no password was supplied |
+| `WRONG_PASSWORD` | 5 | the supplied password does not open the input |
+| `UNSUPPORTED_ENCRYPTION` | 5 | the input uses an encryption scheme this build cannot process |
+| `OUTPUT_DIR_MISSING` | 6 | the output directory does not exist |
+| `OUTPUT_IS_DIRECTORY` | 6 | an output path is a directory |
+| `OUTPUT_EXISTS` | 6 | an output exists and `PDFOPS_ON_EXISTS` is `fail` |
+| `OUTPUT_NOT_WRITABLE` | 6 | the output location is not writable |
+| `DISK_FULL` | 6 | no space left on device while writing |
